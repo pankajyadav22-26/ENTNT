@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { db, type Job } from '../lib/db';
+import { db, type Job, type Candidate, type CandidateTimeline } from '../lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const simulateNetwork = async (errorRate = 0.05) => {
@@ -114,5 +114,55 @@ export const handlers = [
     }
 
     return HttpResponse.json(job);
+  }),
+
+  http.get('/candidates', async ({ request }) => {
+    const url = new URL(request.url);
+    const stage = url.searchParams.get('stage');
+    const search = url.searchParams.get('search');
+
+    let candidatesQuery = db.candidates.toCollection();
+
+    if (stage) {
+      candidatesQuery = candidatesQuery.filter(c => c.stage === stage);
+    }
+
+    if (search) {
+      const searchLower = search.toLowerCase();
+      candidatesQuery = candidatesQuery.filter(c =>
+        c.name.toLowerCase().includes(searchLower) ||
+        c.email.toLowerCase().includes(searchLower)
+      );
+    }
+
+    const candidates = await candidatesQuery.toArray();
+    return HttpResponse.json(candidates);
+  }),
+
+  http.patch('/candidates/:id', async ({ request, params }) => {
+    try {
+      const { id } = params;
+      const { stage } = await request.json() as Partial<Candidate>;
+
+      if (!stage) return new HttpResponse('Stage is required', { status: 400 });
+
+      const candidateId = id as string;
+      const oldCandidate = await db.candidates.get(candidateId);
+
+      await db.candidates.update(candidateId, { stage });
+
+      const timelineEvent: CandidateTimeline = {
+        id: uuidv4(),
+        candidateId: candidateId,
+        event: `Stage changed from "${oldCandidate?.stage}" to "${stage}"`,
+        timestamp: new Date(),
+      };
+      await db.candidateTimeline.add(timelineEvent);
+
+      const updatedCandidate = await db.candidates.get(candidateId);
+      return HttpResponse.json(updatedCandidate);
+    } catch (error) {
+      return HttpResponse.json({ message: 'Failed to update candidate' }, { status: 500 });
+    }
   }),
 ];
