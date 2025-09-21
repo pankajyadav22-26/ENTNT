@@ -43,6 +43,11 @@ export function JobDetailPage() {
       <p>
         <strong>Slug:</strong> /careers/{job.slug}
       </p>
+      <div style={{ marginTop: "2rem" }}>
+        <Link to={`/jobs/${jobId}/assessment`}>
+          <button>Edit Assessment</button>
+        </Link>
+      </div>
     </div>
   );
 }

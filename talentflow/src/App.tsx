@@ -5,6 +5,7 @@ import { JobsPage } from "./pages/JobsPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { CandidatesPage } from "./pages/CandidatesPage";
 import { CandidateProfilePage } from "./pages/CandidateProfilePage";
+import { AssessmentBuilderPage } from "./pages/AssessmentBuilderPage";
 
 const DashboardPage = () => <h2>Dashboard</h2>;
 const NotFoundPage = () => <h2>404 Not Found</h2>;
@@ -45,6 +46,10 @@ function App() {
           <Route
             path="/candidates/:candidateId"
             element={<CandidateProfilePage />}
+          />
+          <Route
+            path="/jobs/:jobId/assessment"
+            element={<AssessmentBuilderPage />}
           />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
