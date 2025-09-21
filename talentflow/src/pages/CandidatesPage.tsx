@@ -4,6 +4,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import type { Candidate } from "../lib/db";
 import { CandidateKanbanBoard } from "../components/CandidateKanbanBoard";
+import { Link } from "react-router-dom";
 
 const fetchCandidates = async (filters: {
   search: string;
@@ -192,7 +193,9 @@ export function CandidatesPage() {
                   }}
                 >
                   <div style={{ flex: 1, fontWeight: "bold" }}>
-                    {candidate.name}
+                    <Link to={`/candidates/${candidate.id}`}>
+                      {candidate.name}
+                    </Link>
                   </div>
                   <div style={{ flex: 1 }}>{candidate.email}</div>
                   <div style={{ flex: 1, textTransform: "capitalize" }}>

@@ -1,5 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import type { Candidate } from "../lib/db";
+import { Link } from "react-router-dom";
 
 type Props = {
   candidate: Candidate;
@@ -32,8 +33,15 @@ export function CandidateCard({ candidate }: Props) {
       {...listeners}
       {...attributes}
     >
-      <strong>{candidate.name}</strong>
-      <div style={{ fontSize: "0.8rem", color: "#555" }}>{candidate.email}</div>
+      <Link
+        to={`/candidates/${candidate.id}`}
+        style={{ textDecoration: "none", color: "inherit" }}
+      >
+        <strong>{candidate.name}</strong>
+        <div style={{ fontSize: "0.8rem", color: "#555" }}>
+          {candidate.email}
+        </div>
+      </Link>
     </div>
   );
 }

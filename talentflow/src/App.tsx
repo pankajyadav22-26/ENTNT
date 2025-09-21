@@ -4,6 +4,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import { JobsPage } from "./pages/JobsPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { CandidatesPage } from "./pages/CandidatesPage";
+import { CandidateProfilePage } from "./pages/CandidateProfilePage";
 
 const DashboardPage = () => <h2>Dashboard</h2>;
 const NotFoundPage = () => <h2>404 Not Found</h2>;
@@ -41,6 +42,10 @@ function App() {
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:jobId" element={<JobDetailPage />} />
           <Route path="/candidates" element={<CandidatesPage />} />
+          <Route
+            path="/candidates/:candidateId"
+            element={<CandidateProfilePage />}
+          />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
