@@ -165,4 +165,25 @@ export const handlers = [
       return HttpResponse.json({ message: 'Failed to update candidate' }, { status: 500 });
     }
   }),
+
+  http.get('/candidates/:id', async ({ params }) => {
+    const { id } = params;
+    const candidate = await db.candidates.get(id as string);
+
+    if (!candidate) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    return HttpResponse.json(candidate);
+  }),
+
+  http.get('/candidates/:id/timeline', async ({ params }) => {
+    const { id } = params;
+
+    const timelineEvents = await db.candidateTimeline
+      .where('candidateId')
+      .equals(id as string)
+      .sortBy('timestamp');
+
+    return HttpResponse.json(timelineEvents.reverse());
+  }),
 ];
