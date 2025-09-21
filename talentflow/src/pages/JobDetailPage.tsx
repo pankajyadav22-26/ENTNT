@@ -43,7 +43,12 @@ export function JobDetailPage() {
       <p>
         <strong>Slug:</strong> /careers/{job.slug}
       </p>
-      <div style={{ marginTop: "2rem" }}>
+      <div style={{ marginTop: "2rem", display: "flex", gap: "1rem" }}>
+        <Link to={`/jobs/${jobId}/apply`}>
+          <button style={{ padding: "0.75rem 1.5rem", fontSize: "1.2rem" }}>
+            Apply Now
+          </button>
+        </Link>
         <Link to={`/jobs/${jobId}/assessment`}>
           <button>Edit Assessment</button>
         </Link>
