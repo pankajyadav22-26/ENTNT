@@ -17,15 +17,24 @@ export interface Candidate {
   stage: 'applied' | 'screen' | 'tech' | 'offer' | 'hired' | 'rejected';
 }
 
+export interface CandidateTimeline {
+  id: string;
+  candidateId: string;
+  event: string;
+  timestamp: Date;
+}
+
 export class TalentFlowDB extends Dexie {
   jobs!: Table<Job>;
   candidates!: Table<Candidate>;
+  candidateTimeline!: Table<CandidateTimeline>;
 
   constructor() {
     super('talentFlowDatabase');
-    this.version(1).stores({
+    this.version(2).stores({
       jobs: 'id, slug, status, order',
-      candidates: 'id, jobId, stage',
+      candidates: 'id, jobId, stage, *nameWords',
+      candidateTimeline: '++id, candidateId',
     });
   }
 }
