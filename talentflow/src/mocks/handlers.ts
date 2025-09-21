@@ -78,13 +78,23 @@ export const handlers = [
   }),
 
   http.patch('/jobs/:id', async ({ request, params }) => {
-  const { id } = params;
-  const updates = await request.json() as Partial<Job>;
+    const { id } = params;
+    const updates = await request.json() as Partial<Job>;
 
-  await db.jobs.update(id as string, updates);
+    await db.jobs.update(id as string, updates);
 
-  const updatedJob = await db.jobs.get(id as string);
-  return HttpResponse.json(updatedJob);
-}),
+    const updatedJob = await db.jobs.get(id as string);
+    return HttpResponse.json(updatedJob);
+  }),
 
+  http.get('/jobs/:id', async ({ params }) => {
+    const { id } = params;
+    const job = await db.jobs.get(id as string);
+
+    if (!job) {
+      return new HttpResponse(null, { status: 404 });
+    }
+
+    return HttpResponse.json(job);
+  }),
 ];
