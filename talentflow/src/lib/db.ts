@@ -24,17 +24,40 @@ export interface CandidateTimeline {
   timestamp: Date;
 }
 
+export type QuestionType = 'single-choice' | 'multi-choice' | 'short-text' | 'long-text';
+
+export interface Question {
+  id: string;
+  title: string;
+  type: QuestionType;
+  options?: string[];
+}
+
+export interface Section {
+  id: string;
+  title: string;
+  questions: Question[];
+}
+
+export interface Assessment {
+  jobId: string;
+  sections: Section[];
+}
+
+
 export class TalentFlowDB extends Dexie {
   jobs!: Table<Job>;
   candidates!: Table<Candidate>;
   candidateTimeline!: Table<CandidateTimeline>;
+  assessments!: Table<Assessment>;
 
   constructor() {
     super('talentFlowDatabase');
-    this.version(2).stores({
+    this.version(3).stores({
       jobs: 'id, slug, status, order',
       candidates: 'id, jobId, stage, *nameWords',
       candidateTimeline: '++id, candidateId',
+      assessments: 'jobId', 
     });
   }
 }
