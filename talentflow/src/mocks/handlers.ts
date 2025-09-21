@@ -77,6 +77,24 @@ export const handlers = [
     }
   }),
 
+  http.patch('/jobs/reorder', async ({ request }) => {
+    if (Math.random() < 0.5) {
+      console.error("Simulating a 500 server error on reorder!");
+      return HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    }
+
+    const reorderedJobs = await request.json() as { id: string; order: number }[];
+
+    const updates = reorderedJobs.map(job => ({
+      key: job.id,
+      changes: { order: job.order }
+    }));
+
+    await db.jobs.bulkUpdate(updates);
+
+    return HttpResponse.json({ success: true });
+  }),
+
   http.patch('/jobs/:id', async ({ request, params }) => {
     const { id } = params;
     const updates = await request.json() as Partial<Job>;

@@ -24,8 +24,8 @@ export class TalentFlowDB extends Dexie {
   constructor() {
     super('talentFlowDatabase');
     this.version(1).stores({
-      jobs: '++id, slug, status, order',
-      candidates: '++id, jobId, stage',
+      jobs: 'id, slug, status, order',
+      candidates: 'id, jobId, stage',
     });
   }
 }

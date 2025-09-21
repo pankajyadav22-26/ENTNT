@@ -2,8 +2,21 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Job } from "../lib/db";
 import { JobModal } from "../components/JobModal";
+import { JobRow } from "../components/JobRow";
 import type { SubmitHandler } from "react-hook-form";
-import { Link } from "react-router-dom";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 const fetchJobs = async (filters: {
   title: string;
@@ -67,15 +80,31 @@ const updateJob = async ({
   return response.json();
 };
 
+const reorderJobs = async (jobs: Job[]): Promise<{ success: boolean }> => {
+  const payload = jobs.map((job, index) => ({
+    id: job.id,
+    order: index + 1,
+  }));
+
+  const response = await fetch("/jobs/reorder", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to reorder jobs");
+  }
+  return response.json();
+};
+
 export function JobsPage() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({ title: "", status: "" });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
 
   const {
-    data: jobs,
+    data: jobs = [],
     isLoading,
     isError,
   } = useQuery({
@@ -89,18 +118,6 @@ export function JobsPage() {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
   });
-
-  const handleFilterChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleToggleArchive = (job: Job) => {
-    const newStatus = job.status === "active" ? "archived" : "active";
-    archiveMutation.mutate({ id: job.id, status: newStatus });
-  };
 
   const createMutation = useMutation({
     mutationFn: createJob,
@@ -119,6 +136,39 @@ export function JobsPage() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: reorderJobs,
+    onMutate: async (optimisticallyReorderedJobs) => {
+      await queryClient.cancelQueries({ queryKey: ["jobs", filters] });
+      const previousJobs = queryClient.getQueryData<Job[]>(["jobs", filters]);
+
+      queryClient.setQueryData(["jobs", filters], optimisticallyReorderedJobs);
+
+      return { previousJobs };
+    },
+    onError: (err, newJobs, context) => {
+      alert("Failed to reorder. Rolling back.");
+      if (context?.previousJobs) {
+        queryClient.setQueryData(["jobs", filters], context.previousJobs);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs", filters] });
+    },
+  });
+
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleToggleArchive = (job: Job) => {
+    const newStatus = job.status === "active" ? "archived" : "active";
+    archiveMutation.mutate({ id: job.id, status: newStatus });
+  };
+
   const handleOpenCreateModal = () => {
     setJobToEdit(null);
     setIsModalOpen(true);
@@ -136,6 +186,24 @@ export function JobsPage() {
       createMutation.mutate(data);
     }
   };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = jobs.findIndex((j) => j.id === active.id);
+      const newIndex = jobs.findIndex((j) => j.id === over.id);
+
+      const reorderedData = arrayMove(jobs, oldIndex, newIndex);
+
+      reorderMutation.mutate(reorderedData);
+    }
+  };
+
+  const jobIds = jobs.map((j) => j.id);
 
   return (
     <div>
@@ -174,46 +242,39 @@ export function JobsPage() {
             "An error occurred"}
         </div>
       )}
-      {jobs && (
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead></thead>
-          <tbody>
-            {jobs.map((job) => (
-              <tr
-                key={job.id}
-                style={{
-                  borderBottom: "1px solid #eee",
-                  opacity:
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={jobIds} strategy={verticalListSortingStrategy}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid #ccc", textAlign: "left" }}>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Tags</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.map((job) => (
+                <JobRow
+                  key={job.id}
+                  job={job}
+                  onEdit={handleOpenEditModal}
+                  onToggleArchive={handleToggleArchive}
+                  isArchiving={
                     archiveMutation.isPending &&
                     archiveMutation.variables?.id === job.id
-                      ? 0.5
-                      : 1,
-                }}
-              >
-                <td>
-                  <Link to={`/jobs/${job.id}`}>{job.title}</Link>
-                </td>
-                <td style={{ padding: "0.5rem 0" }}>{job.title}</td>
-                <td>{job.status}</td>
-                <td>{job.tags.join(", ")}</td>
-                <td>
-                  <button onClick={() => handleOpenEditModal(job)}>Edit</button>
-                  <button
-                    style={{ marginLeft: "0.5rem" }}
-                    onClick={() => handleToggleArchive(job)}
-                    disabled={
-                      archiveMutation.isPending &&
-                      archiveMutation.variables?.id === job.id
-                    }
-                  >
-                    {job.status === "active" ? "Archive" : "Unarchive"}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+                  }
+                />
+              ))}
+            </tbody>
+          </table>
+        </SortableContext>
+      </DndContext>
 
       <JobModal
         isOpen={isModalOpen}
