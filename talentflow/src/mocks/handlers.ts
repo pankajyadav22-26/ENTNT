@@ -14,13 +14,21 @@ export const handlers = [
   http.get('/jobs', async ({ request }) => {
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
+    const titleSearch = url.searchParams.get('title');
 
-    let jobsQuery = db.jobs.toCollection();
+    let jobs = await db.jobs.toArray();
+
     if (status) {
-      jobsQuery = db.jobs.where('status').equals(status);
+      jobs = jobs.filter(job => job.status === status);
     }
 
-    const jobs = await jobsQuery.sortBy('order');
+    if (titleSearch) {
+      jobs = jobs.filter(job =>
+        job.title.toLowerCase().includes(titleSearch.toLowerCase())
+      );
+    }
+
+    jobs.sort((a, b) => a.order - b.order);
 
     return HttpResponse.json(jobs);
   }),
@@ -44,7 +52,7 @@ export const handlers = [
           { status: 400 }
         );
       }
-      
+
       const maxOrderJob = await db.jobs.orderBy('order').last();
       const newOrder = (maxOrderJob?.order ?? 0) + 1;
 
@@ -68,4 +76,15 @@ export const handlers = [
       );
     }
   }),
+
+  http.patch('/jobs/:id', async ({ request, params }) => {
+  const { id } = params;
+  const updates = await request.json() as Partial<Job>;
+
+  await db.jobs.update(id as string, updates);
+
+  const updatedJob = await db.jobs.get(id as string);
+  return HttpResponse.json(updatedJob);
+}),
+
 ];
