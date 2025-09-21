@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { db, type Job, type Candidate, type CandidateTimeline } from '../lib/db';
+import { db, type Job, type Candidate, type CandidateTimeline, type Assessment } from '../lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const simulateNetwork = async (errorRate = 0.05) => {
@@ -185,5 +185,25 @@ export const handlers = [
       .sortBy('timestamp');
 
     return HttpResponse.json(timelineEvents.reverse());
+  }),
+
+  http.get('/assessments/:jobId', async ({ params }) => {
+    const { jobId } = params;
+    const assessment = await db.assessments.get(jobId as string);
+
+    if (!assessment) {
+      return HttpResponse.json({ jobId, sections: [] });
+    }
+
+    return HttpResponse.json(assessment);
+  }),
+
+  http.put('/assessments/:jobId', async ({ request, params }) => {
+    const { jobId } = params;
+    const assessmentData = await request.json() as Assessment;
+
+    await db.assessments.put({ ...assessmentData, jobId: jobId as string });
+
+    return HttpResponse.json(assessmentData);
   }),
 ];
