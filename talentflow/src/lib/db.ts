@@ -44,20 +44,28 @@ export interface Assessment {
   sections: Section[];
 }
 
+export interface AssessmentResponse {
+  id: string;
+  jobId: string;
+  candidateId: string;
+  answers: Record<string, any>;
+}
 
 export class TalentFlowDB extends Dexie {
   jobs!: Table<Job>;
   candidates!: Table<Candidate>;
   candidateTimeline!: Table<CandidateTimeline>;
   assessments!: Table<Assessment>;
+  assessmentResponses!: Table<AssessmentResponse>;
 
   constructor() {
     super('talentFlowDatabase');
-    this.version(3).stores({
+    this.version(4).stores({
       jobs: 'id, slug, status, order',
       candidates: 'id, jobId, stage, *nameWords',
       candidateTimeline: '++id, candidateId',
-      assessments: 'jobId', 
+      assessments: 'jobId',
+      assessmentResponses: 'id, jobId, candidateId',
     });
   }
 }
