@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import { db, type Job, type Candidate, type CandidateTimeline, type Assessment } from '../lib/db';
+import { db, type Job, type Candidate, type CandidateTimeline, type Assessment, type AssessmentResponse } from '../lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 const simulateNetwork = async (errorRate = 0.05) => {
@@ -205,5 +205,23 @@ export const handlers = [
     await db.assessments.put({ ...assessmentData, jobId: jobId as string });
 
     return HttpResponse.json(assessmentData);
+  }),
+
+  http.post('/assessments/:jobId/submit', async ({ request, params }) => {
+    const { jobId } = params;
+    const submission = await request.json() as { answers: Record<string, any> };
+
+    const mockCandidateId = 'candidate-123';
+
+    const response: AssessmentResponse = {
+      id: `${mockCandidateId}_${jobId}`,
+      jobId: jobId as string,
+      candidateId: mockCandidateId,
+      answers: submission.answers,
+    };
+
+    await db.assessmentResponses.put(response);
+
+    return HttpResponse.json({ success: true, responseId: response.id });
   }),
 ];
