@@ -24,13 +24,28 @@ export interface CandidateTimeline {
   timestamp: Date;
 }
 
-export type QuestionType = 'single-choice' | 'multi-choice' | 'short-text' | 'long-text';
+export type QuestionType = 'single-choice' | 'multi-choice' | 'short-text' | 'long-text' | 'numeric' | 'file-upload';
+
+export interface ValidationRules {
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+}
+
+export interface ConditionalLogic {
+  questionId?: string; 
+  value?: any;
+}
 
 export interface Question {
   id: string;
   title: string;
   type: QuestionType;
   options?: string[];
+  validation?: ValidationRules;
+  conditional?: ConditionalLogic;
 }
 
 export interface Section {
