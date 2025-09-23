@@ -208,20 +208,33 @@ export const handlers = [
   }),
 
   http.post('/assessments/:jobId/submit', async ({ request, params }) => {
-    const { jobId } = params;
-    const submission = await request.json() as { answers: Record<string, any> };
+    try {
+      const { jobId } = params;
+      const submission = await request.json() as { name: string; email: string; answers: Record<string, any> };
 
-    const mockCandidateId = 'candidate-123';
+      const newCandidate: Candidate = {
+        id: uuidv4(),
+        name: submission.name,
+        email: submission.email,
+        jobId: jobId as string,
+        stage: 'applied',
+      };
+      await db.candidates.add(newCandidate);
+      console.log('New candidate created:', newCandidate);
 
-    const response: AssessmentResponse = {
-      id: `${mockCandidateId}_${jobId}`,
-      jobId: jobId as string,
-      candidateId: mockCandidateId,
-      answers: submission.answers,
-    };
+      const response: AssessmentResponse = {
+        id: `${newCandidate.id}_${jobId}`,
+        jobId: jobId as string,
+        candidateId: newCandidate.id,
+        answers: submission.answers,
+      };
+      await db.assessmentResponses.put(response);
+      console.log('Assessment response saved:', response);
 
-    await db.assessmentResponses.put(response);
-
-    return HttpResponse.json({ success: true, responseId: response.id });
+      return HttpResponse.json({ success: true, candidateId: newCandidate.id });
+    } catch (error) {
+      console.error("Failed to process application:", error);
+      return HttpResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    }
   }),
 ];
