@@ -1,6 +1,11 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm, FormProvider, useFormContext } from "react-hook-form";
+import {
+  useForm,
+  FormProvider,
+  useFormContext,
+  Controller,
+} from "react-hook-form";
 import type { Assessment, Question } from "../lib/db";
 
 const fetchAssessment = async (jobId: string): Promise<Assessment> => {
@@ -78,8 +83,27 @@ export function AssessmentTakerPage() {
 }
 
 function DynamicQuestion({ question }: { question: Question }) {
-  const { register, watch } = useFormContext();
+  const {
+    register,
+    control,
+    watch,
+    formState: { errors },
+  } = useFormContext();
   const fieldName = question.id;
+  const validationRules = question.validation || {};
+  
+  const dependentQuestionId = question.conditional?.questionId;
+  const dependentValue = dependentQuestionId
+    ? watch(dependentQuestionId)
+    : null;
+  if (
+    dependentQuestionId &&
+    dependentValue?.toString() !== question.conditional?.value?.toString()
+  ) {
+    return null;
+  }
+
+  const errorMessage = errors[fieldName]?.message as string;
 
   return (
     <div
@@ -93,22 +117,35 @@ function DynamicQuestion({ question }: { question: Question }) {
       <label
         style={{ display: "block", fontWeight: "bold", marginBottom: "0.5rem" }}
       >
-        {question.title}
+        {question.title} {validationRules.required && "*"}
       </label>
 
       {question.type === "short-text" && (
         <input
           type="text"
-          {...register(fieldName, { required: true, maxLength: 100 })}
-          style={{ width: "100%", boxSizing: "border-box" }}
+          {...register(fieldName, validationRules)}
+          style={{ width: "100%" }}
         />
       )}
-
       {question.type === "long-text" && (
         <textarea
-          {...register(fieldName, { required: true })}
-          style={{ width: "100%", minHeight: "80px", boxSizing: "border-box" }}
+          {...register(fieldName, validationRules)}
+          style={{ width: "100%", minHeight: "80px" }}
         />
+      )}
+      {question.type === "numeric" && (
+        <input
+          type="number"
+          {...register(fieldName, { ...validationRules, valueAsNumber: true })}
+          style={{ width: "100%" }}
+        />
+      )}
+      {question.type === "file-upload" && (
+        <input type="file" {...register(fieldName, validationRules)} />
+      )}
+
+      {errorMessage && (
+        <p style={{ color: "red", fontSize: "0.8rem" }}>{errorMessage}</p>
       )}
     </div>
   );

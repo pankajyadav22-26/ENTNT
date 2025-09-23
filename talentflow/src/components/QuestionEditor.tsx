@@ -12,9 +12,9 @@ export function QuestionEditor({
   onRemove,
 }: Props) {
   const { register, watch } = useFormContext();
-  const questionType = watch(
-    `sections.${sectionIndex}.questions.${questionIndex}.type`
-  );
+  const typePath = `sections.${sectionIndex}.questions.${questionIndex}.type`;
+  const validationPath = `sections.${sectionIndex}.questions.${questionIndex}.validation`;
+  const questionType = watch(typePath);
 
   return (
     <div
@@ -23,38 +23,57 @@ export function QuestionEditor({
         padding: "1rem",
         marginBottom: "1rem",
         borderRadius: "4px",
+        backgroundColor: "#fdfdfd",
       }}
     >
+      <button type="button" onClick={onRemove} style={{ float: "right" }}>
+        X
+      </button>
       <input
         placeholder="Question Title"
         {...register(
           `sections.${sectionIndex}.questions.${questionIndex}.title`,
           { required: true }
         )}
-        style={{ width: "100%", marginBottom: "0.5rem" }}
+        style={{ width: "90%", marginBottom: "0.5rem", fontWeight: "bold" }}
       />
-      <select
-        {...register(
-          `sections.${sectionIndex}.questions.${questionIndex}.type`
-        )}
-        style={{ marginBottom: "0.5rem" }}
-      >
+      <select {...register(typePath)} style={{ marginBottom: "0.5rem" }}>
         <option value="short-text">Short Text</option>
         <option value="long-text">Long Text</option>
+        <option value="numeric">Numeric</option>
         <option value="single-choice">Single Choice</option>
         <option value="multi-choice">Multiple Choice</option>
+        <option value="file-upload">File Upload</option>
       </select>
 
-      {(questionType === "single-choice" ||
-        questionType === "multi-choice") && (
-        <div>
-          <p style={{ color: "#888" }}>Option management UI would go here.</p>
-        </div>
-      )}
+      <div
+        style={{
+          fontSize: "0.9rem",
+          display: "flex",
+          gap: "1rem",
+          alignItems: "center",
+        }}
+      >
+        <label>
+          <input type="checkbox" {...register(`${validationPath}.required`)} />{" "}
+          Required
+        </label>
 
-      <button type="button" onClick={onRemove}>
-        Remove Question
-      </button>
+        {questionType === "numeric" && (
+          <>
+            <input
+              type="number"
+              placeholder="Min Value"
+              {...register(`${validationPath}.min`, { valueAsNumber: true })}
+            />
+            <input
+              type="number"
+              placeholder="Max Value"
+              {...register(`${validationPath}.max`, { valueAsNumber: true })}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }
