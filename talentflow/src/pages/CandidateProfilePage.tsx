@@ -32,11 +32,15 @@ const MentionRenderer = ({ text }: { text: string }) => {
   );
 };
 
+const TEAM_MEMBERS = ["Anna", "Ben", "Chris", "David", "Emily", "Frank"];
+
 export function CandidateProfilePage() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const [note, setNote] = useState(
-    "Initial note for @JohnDoe about the upcoming tech screen."
+    "Initial note for @Chris about the upcoming tech screen."
   );
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [mentionQuery, setMentionQuery] = useState("");
 
   const { data: candidate, isLoading: isLoadingCandidate } = useQuery({
     queryKey: ["candidate", candidateId],
@@ -49,6 +53,39 @@ export function CandidateProfilePage() {
     queryFn: () => fetchTimeline(candidateId!),
     enabled: !!candidateId,
   });
+
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setNote(text);
+
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = text.substring(0, cursorPosition);
+    const lastMentionIndex = textBeforeCursor.lastIndexOf("@");
+    const lastSpaceIndex = textBeforeCursor.lastIndexOf(" ");
+
+    if (lastMentionIndex > lastSpaceIndex) {
+      const query = textBeforeCursor.substring(lastMentionIndex + 1);
+      setMentionQuery(query);
+      setSuggestions(
+        TEAM_MEMBERS.filter((member) =>
+          member.toLowerCase().startsWith(query.toLowerCase())
+        )
+      );
+    } else {
+      setSuggestions([]);
+      setMentionQuery("");
+    }
+  };
+
+  const handleSuggestionClick = (memberName: string) => {
+    const cursorPosition = note.lastIndexOf("@" + mentionQuery);
+    const textBefore = note.substring(0, cursorPosition);
+    const textAfter = note.substring(cursorPosition + mentionQuery.length + 1);
+
+    setNote(`${textBefore}@${memberName} ${textAfter}`);
+    setSuggestions([]);
+    setMentionQuery("");
+  };
 
   if (isLoadingCandidate || isLoadingTimeline) {
     return (
@@ -118,12 +155,28 @@ export function CandidateProfilePage() {
 
           <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg space-y-4">
             <h3 className="text-xl font-semibold text-indigo-300">Notes</h3>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full min-h-[120px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Add notes with @mentions..."
-            />
+            <div className="relative">
+              <textarea
+                value={note}
+                onChange={handleNoteChange}
+                className="w-full min-h-[120px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                placeholder="Add notes with @mentions..."
+              />
+              {suggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 rounded-md bg-white shadow-lg border border-gray-200">
+                  {suggestions.map((member) => (
+                    <div
+                      key={member}
+                      onClick={() => handleSuggestionClick(member)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="px-4 py-2 text-sm text-gray-800 cursor-pointer hover:bg-gray-100"
+                    >
+                      {member}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div>
               <h4 className="text-sm font-medium text-gray-400 mb-2">
                 Preview:
