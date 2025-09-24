@@ -1,20 +1,32 @@
 import { useFormContext } from "react-hook-form";
+import type { Question } from "../lib/db";
+import { useEffect } from "react";
 
 type Props = {
   sectionIndex: number;
   questionIndex: number;
   onRemove: () => void;
+  availableQuestions: Question[];
 };
 
 export function QuestionEditor({
   sectionIndex,
   questionIndex,
   onRemove,
+  availableQuestions,
 }: Props) {
-  const { register, watch } = useFormContext();
-  const typePath = `sections.${sectionIndex}.questions.${questionIndex}.type`;
-  const validationPath = `sections.${sectionIndex}.questions.${questionIndex}.validation`;
-  const questionType = watch(typePath);
+  const { register, watch, setValue } = useFormContext();
+  const baseName = `sections.${sectionIndex}.questions.${questionIndex}`;
+  const questionType = watch(`${baseName}.type`);
+
+  const isConditional = watch(`${baseName}.isConditional`);
+
+  useEffect(() => {
+    if (!isConditional) {
+      setValue(`${baseName}.conditional.questionId`, "");
+      setValue(`${baseName}.conditional.value`, "");
+    }
+  }, [isConditional, setValue, baseName]);
 
   return (
     <div
@@ -33,10 +45,7 @@ export function QuestionEditor({
       </button>
       <input
         placeholder="Question Title"
-        {...register(
-          `sections.${sectionIndex}.questions.${questionIndex}.title`,
-          { required: true }
-        )}
+        {...register(`${baseName}.title`, { required: true })}
         className="w-full mb-3 px-3 py-2 font-semibold rounded-lg 
           border border-gray-300/40 dark:border-gray-600/50 
           bg-white/70 dark:bg-gray-700/70 
@@ -44,7 +53,7 @@ export function QuestionEditor({
           dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
       />
       <select
-        {...register(typePath)}
+        {...register(`${baseName}.type`)}
         className="w-full mb-4 px-3 py-2 rounded-lg border border-gray-300/40 
           dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 
           focus:outline-none focus:ring-2 focus:ring-cyan-500 
@@ -57,39 +66,74 @@ export function QuestionEditor({
         <option value="multi-choice">Multiple Choice</option>
         <option value="file-upload">File Upload</option>
       </select>
-      <div className="flex flex-wrap gap-4 items-center text-sm text-gray-700 dark:text-gray-300">
+
+      <div className="flex flex-wrap gap-4 items-center text-sm text-gray-700 dark:text-gray-300 pb-4 border-b border-gray-300/40 dark:border-gray-700/50">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            {...register(`${validationPath}.required`)}
+            {...register(`${baseName}.validation.required`)}
             className="w-4 h-4 rounded accent-cyan-500"
           />
           <span>Required</span>
         </label>
-
         {questionType === "numeric" && (
           <>
             <input
               type="number"
               placeholder="Min"
-              {...register(`${validationPath}.min`, { valueAsNumber: true })}
-              className="w-24 px-2 py-1 rounded-lg border border-gray-300/40 
-                dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 
-                focus:outline-none focus:ring-2 focus:ring-cyan-500 
-                dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              {...register(`${baseName}.validation.min`, {
+                valueAsNumber: true,
+              })}
+              className="w-24 px-2 py-1 rounded-lg border border-gray-300/40 dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <input
               type="number"
               placeholder="Max"
-              {...register(`${validationPath}.max`, { valueAsNumber: true })}
-              className="w-24 px-2 py-1 rounded-lg border border-gray-300/40 
-                dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 
-                focus:outline-none focus:ring-2 focus:ring-cyan-500 
-                dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              {...register(`${baseName}.validation.max`, {
+                valueAsNumber: true,
+              })}
+              className="w-24 px-2 py-1 rounded-lg border border-gray-300/40 dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
           </>
         )}
       </div>
+
+      {availableQuestions.length > 0 && (
+        <div className="pt-4 text-sm text-gray-700 dark:text-gray-300">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              {...register(`${baseName}.isConditional`)}
+              className="w-4 h-4 rounded accent-cyan-500"
+            />
+            <span>Conditional Logic</span>
+          </label>
+
+          {isConditional && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 bg-gray-200/50 dark:bg-gray-900/50 p-3 rounded-lg">
+              <span>Show this question if</span>
+              <select
+                {...register(`${baseName}.conditional.questionId`)}
+                className="px-2 py-1 rounded-lg border border-gray-300/40 dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:text-gray-100"
+              >
+                <option value="">Select a question...</option>
+                {availableQuestions.map((q) => (
+                  <option key={q.id} value={q.id}>
+                    {q.title || `(Untitled Question)`}
+                  </option>
+                ))}
+              </select>
+              <span>is equal to</span>
+              <input
+                type="text"
+                placeholder="e.g., Yes"
+                {...register(`${baseName}.conditional.value`)}
+                className="w-24 px-2 py-1 rounded-lg border border-gray-300/40 dark:border-gray-600/50 bg-white/70 dark:bg-gray-700/70 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

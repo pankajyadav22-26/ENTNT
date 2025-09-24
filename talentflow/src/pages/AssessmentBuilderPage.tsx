@@ -6,7 +6,7 @@ import {
   FormProvider,
   useFormContext,
 } from "react-hook-form";
-import type { Assessment } from "../lib/db";
+import type { Assessment, Section, Question } from "../lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { QuestionEditor } from "../components/QuestionEditor";
 import { AssessmentPreview } from "../components/AssessmentPreview";
@@ -48,8 +48,10 @@ export function AssessmentBuilderPage() {
     },
   });
 
-  const methods = useForm<Assessment>();
-  const { control, handleSubmit, reset } = methods;
+  const methods = useForm<Assessment>({
+    defaultValues: { jobId: jobId, sections: [] },
+  });
+  const { control, handleSubmit, reset, watch } = methods;
 
   const {
     fields: sections,
@@ -59,6 +61,8 @@ export function AssessmentBuilderPage() {
     control,
     name: "sections",
   });
+
+  const watchedSections = watch("sections");
 
   useEffect(() => {
     if (assessmentData) {
@@ -113,7 +117,10 @@ export function AssessmentBuilderPage() {
                   placeholder="Section Title"
                   className="w-full bg-transparent border-b border-gray-500 text-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 transition"
                 />
-                <QuestionsForSection sectionIndex={sectionIndex} />
+                <QuestionsForSection
+                  sectionIndex={sectionIndex}
+                  allSections={watchedSections}
+                />
                 <button
                   type="button"
                   onClick={() => removeSection(sectionIndex)}
@@ -143,7 +150,13 @@ export function AssessmentBuilderPage() {
   );
 }
 
-function QuestionsForSection({ sectionIndex }: { sectionIndex: number }) {
+function QuestionsForSection({
+  sectionIndex,
+  allSections,
+}: {
+  sectionIndex: number;
+  allSections: Section[];
+}) {
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
@@ -152,18 +165,36 @@ function QuestionsForSection({ sectionIndex }: { sectionIndex: number }) {
 
   return (
     <div className="space-y-4">
-      {fields.map((field, questionIndex) => (
-        <QuestionEditor
-          key={field.id}
-          sectionIndex={sectionIndex}
-          questionIndex={questionIndex}
-          onRemove={() => remove(questionIndex)}
-        />
-      ))}
+      {fields.map((field, questionIndex) => {
+        const allQuestions = allSections.flatMap((s) => s.questions);
+        const currentQuestionId = (field as Question).id;
+        const currentQuestionGlobalIndex = allQuestions.findIndex(
+          (q) => q.id === currentQuestionId
+        );
+        const availableQuestions = allQuestions.slice(
+          0,
+          currentQuestionGlobalIndex
+        );
+
+        return (
+          <QuestionEditor
+            key={field.id}
+            sectionIndex={sectionIndex}
+            questionIndex={questionIndex}
+            onRemove={() => remove(questionIndex)}
+            availableQuestions={availableQuestions}
+          />
+        );
+      })}
       <button
         type="button"
         onClick={() =>
-          append({ id: uuidv4(), title: "", type: "short-text" })
+          append({
+            id: uuidv4(),
+            title: "",
+            type: "short-text",
+            validation: { required: false },
+          })
         }
         className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-cyan-400 hover:bg-white/10 transition"
       >
