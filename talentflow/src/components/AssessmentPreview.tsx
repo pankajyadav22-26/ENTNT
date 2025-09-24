@@ -6,29 +6,45 @@ export function AssessmentPreview() {
   const sections: Section[] = watch("sections") || [];
 
   return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        padding: "1rem",
-        backgroundColor: "#f9f9f9",
-        borderRadius: "4px",
-      }}
-    >
-      <h3 style={{ marginTop: 0 }}>Live Preview</h3>
+    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-lg">
+      <h3 className="text-xl font-semibold text-gray-100 mb-4">Live Preview</h3>
+
       {sections.map((section) => (
-        <div key={section.id} style={{ marginBottom: "1.5rem" }}>
-          <h4>{section.title || "Section Title"}</h4>
-          {section.questions.map((question) => (
-            <div key={question.id} style={{ marginBottom: "1rem" }}>
-              <label>{question.title || "Question Title"}</label>
-              {question.type === "short-text" && (
-                <input type="text" disabled style={{ width: "100%" }} />
-              )}
-              {question.type === "long-text" && (
-                <textarea disabled style={{ width: "100%" }} />
-              )}
-            </div>
-          ))}
+        <div
+          key={section.id}
+          className="mb-8 p-4 rounded-xl bg-white/5 border border-white/10"
+        >
+          <h4 className="text-lg font-medium text-cyan-300 mb-4">
+            {section.title || "Section Title"}
+          </h4>
+
+          <div className="space-y-4">
+            {section.questions.map((question) => (
+              <div key={question.id}>
+                <label className="block text-sm text-gray-300 mb-2">
+                  {question.title || "Question Title"}
+                </label>
+
+                {question.type === "short-text" && (
+                  <input
+                    type="text"
+                    disabled
+                    placeholder="Short answer"
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 placeholder-gray-500 focus:outline-none"
+                  />
+                )}
+
+                {question.type === "long-text" && (
+                  <textarea
+                    disabled
+                    placeholder="Long answer"
+                    className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 placeholder-gray-500 focus:outline-none"
+                    rows={3}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>

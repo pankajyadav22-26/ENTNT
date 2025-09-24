@@ -1,93 +1,136 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import type { Candidate, CandidateTimeline } from '../lib/db';
+import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import type { Candidate, CandidateTimeline } from "../lib/db";
 
 const fetchCandidate = async (id: string): Promise<Candidate> => {
   const res = await fetch(`/candidates/${id}`);
-  if (!res.ok) throw new Error('Candidate not found');
+  if (!res.ok) throw new Error("Candidate not found");
   return res.json();
 };
 
 const fetchTimeline = async (id: string): Promise<CandidateTimeline[]> => {
   const res = await fetch(`/candidates/${id}/timeline`);
-  if (!res.ok) throw new Error('Timeline not found');
+  if (!res.ok) throw new Error("Timeline not found");
   return res.json();
 };
 
 const MentionRenderer = ({ text }: { text: string }) => {
   const parts = text.split(/(@\w+)/g);
   return (
-    <p style={{ whiteSpace: 'pre-wrap', border: '1px solid #eee', padding: '0.5rem', minHeight: '50px' }}>
+    <div className="w-full rounded-lg bg-white/5 backdrop-blur-md border border-white/10 p-3 min-h-[60px] text-gray-200">
       {parts.map((part, i) =>
-        part.startsWith('@') ? <strong key={i}>{part}</strong> : part
+        part.startsWith("@") ? (
+          <span key={i} className="font-semibold text-indigo-400">
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
       )}
-    </p>
+    </div>
   );
 };
 
 export function CandidateProfilePage() {
   const { candidateId } = useParams<{ candidateId: string }>();
-  const [note, setNote] = useState('Initial note for @JohnDoe about the upcoming tech screen.');
+  const [note, setNote] = useState(
+    "Initial note for @JohnDoe about the upcoming tech screen."
+  );
 
   const { data: candidate, isLoading: isLoadingCandidate } = useQuery({
-    queryKey: ['candidate', candidateId],
+    queryKey: ["candidate", candidateId],
     queryFn: () => fetchCandidate(candidateId!),
     enabled: !!candidateId,
   });
 
   const { data: timeline, isLoading: isLoadingTimeline } = useQuery({
-    queryKey: ['candidateTimeline', candidateId],
+    queryKey: ["candidateTimeline", candidateId],
     queryFn: () => fetchTimeline(candidateId!),
     enabled: !!candidateId,
   });
 
   if (isLoadingCandidate || isLoadingTimeline) {
-    return <div>Loading candidate profile...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-400">
+        Loading candidate profile...
+      </div>
+    );
   }
 
   if (!candidate) {
-    return <div>Candidate not found.</div>;
+    return (
+      <div className="flex items-center justify-center h-screen text-red-400">
+        Candidate not found.
+      </div>
+    );
   }
 
   return (
-    <div>
-      <Link to="/candidates">&larr; Back to Candidates List</Link>
-      <div style={{ marginTop: '1rem' }}>
-        <h1>{candidate.name}</h1>
-        <p><strong>Email:</strong> {candidate.email}</p>
-        <p><strong>Current Stage:</strong> <span style={{ textTransform: 'capitalize' }}>{candidate.stage}</span></p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
-        <div>
-          <h3>Hiring Timeline</h3>
-          {timeline && timeline.length > 0 ? (
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              {timeline.map(item => (
-                <li key={item.id} style={{ borderBottom: '1px solid #eee', padding: '0.5rem 0' }}>
-                  <div>{item.event}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                    {new Date(item.timestamp).toLocaleString()}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No timeline events yet.</p>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white px-6 py-12">
+      <div className="max-w-5xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <Link
+            to="/candidates"
+            className="text-sm text-gray-400 hover:text-indigo-300 transition"
+          >
+            &larr; Back to Candidates List
+          </Link>
+        </div>
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg">
+          <h1 className="text-3xl font-bold text-indigo-300">
+            {candidate.name}
+          </h1>
+          <p className="mt-2 text-gray-300">
+            <strong>Email:</strong> {candidate.email}
+          </p>
+          <p className="mt-1 text-gray-300">
+            <strong>Current Stage:</strong>{" "}
+            <span className="capitalize text-indigo-400">
+              {candidate.stage}
+            </span>
+          </p>
         </div>
 
-        <div>
-          <h3>Notes</h3>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            style={{ width: '100%', minHeight: '100px', boxSizing: 'border-box' }}
-            placeholder="Add notes with @mentions..."
-          />
-          <h4>Preview:</h4>
-          <MentionRenderer text={note} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-xl font-semibold text-indigo-300 mb-4">
+              Hiring Timeline
+            </h3>
+            {timeline && timeline.length > 0 ? (
+              <ul className="space-y-4">
+                {timeline.map((item) => (
+                  <li
+                    key={item.id}
+                    className="border-b border-white/10 pb-2 last:border-b-0"
+                  >
+                    <div className="text-gray-200">{item.event}</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(item.timestamp).toLocaleString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-400">No timeline events yet.</p>
+            )}
+          </div>
+
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg space-y-4">
+            <h3 className="text-xl font-semibold text-indigo-300">Notes</h3>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full min-h-[120px] rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              placeholder="Add notes with @mentions..."
+            />
+            <div>
+              <h4 className="text-sm font-medium text-gray-400 mb-2">
+                Preview:
+              </h4>
+              <MentionRenderer text={note} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

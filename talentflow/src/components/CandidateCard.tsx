@@ -4,43 +4,41 @@ import { Link } from "react-router-dom";
 
 type Props = {
   candidate: Candidate;
+  isOverlay?: boolean;
+  isDragging?: boolean;
 };
 
-export function CandidateCard({ candidate }: Props) {
+export function CandidateCard({ candidate, isOverlay, isDragging }: Props) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: candidate.id,
     data: { candidate },
   });
 
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
+  const style =
+    transform && !isOverlay
+      ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
+      : undefined;
+
+  if (isDragging) {
+    return <div ref={setNodeRef} style={{ ...style, visibility: "hidden" }} />;
+  }
 
   return (
     <div
       ref={setNodeRef}
-      style={{
-        ...style,
-        padding: "0.75rem",
-        border: "1px solid #ccc",
-        borderRadius: "4px",
-        backgroundColor: "white",
-        marginBottom: "0.5rem",
-        cursor: "grab",
-      }}
+      style={style}
+      className={`p-4 mb-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-lg shadow-md transition-transform hover:scale-[1.02] ${
+        isOverlay ? "cursor-grabbing" : "cursor-grab active:cursor-grabbing"
+      }`}
       {...listeners}
       {...attributes}
     >
       <Link
         to={`/candidates/${candidate.id}`}
-        style={{ textDecoration: "none", color: "inherit" }}
+        className="block no-underline text-gray-100"
       >
-        <strong>{candidate.name}</strong>
-        <div style={{ fontSize: "0.8rem", color: "#555" }}>
-          {candidate.email}
-        </div>
+        <p className="font-semibold text-lg">{candidate.name}</p>
+        <p className="text-sm text-gray-400">{candidate.email}</p>
       </Link>
     </div>
   );

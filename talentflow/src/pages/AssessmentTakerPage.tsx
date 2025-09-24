@@ -34,6 +34,7 @@ export function AssessmentTakerPage() {
       answers: {},
     },
   });
+
   const {
     handleSubmit,
     register,
@@ -49,13 +50,11 @@ export function AssessmentTakerPage() {
   const mutation = useMutation({
     mutationFn: submitAssessment,
     onSuccess: () => {
-      alert(
-        "Application submitted successfully! You will now appear in the HR candidate list."
-      );
+      alert("✅ Application submitted successfully!");
       methods.reset();
     },
     onError: () => {
-      alert("There was an error submitting your application.");
+      alert("❌ There was an error submitting your application.");
     },
   });
 
@@ -68,79 +67,105 @@ export function AssessmentTakerPage() {
     mutation.mutate({ jobId: jobId!, submissionData });
   };
 
-  if (isLoading) return <div>Loading Assessment...</div>;
+  if (isLoading)
+    return (
+      <div className="text-center text-gray-400">Loading Assessment...</div>
+    );
   if (!assessment || assessment.sections.length === 0) {
-    return <div>This job does not have an assessment.</div>;
+    return (
+      <div className="text-center text-gray-500">
+        This job does not have an assessment.
+      </div>
+    );
   }
 
   return (
-    <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <h1>Application for Job #{jobId}</h1>
-        <p>
-          <Link to={`/jobs/${jobId}`}>&larr; Back to Job Details</Link>
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white px-6 py-12">
+      <div className="max-w-3xl mx-auto backdrop-blur-lg bg-white/10 border border-white/20 shadow-2xl rounded-2xl p-8">
+        <FormProvider {...methods}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <div className="flex justify-between items-center">
+              <h1 className="text-3xl font-semibold">
+                Application for Job{" "}
+                <span className="text-indigo-400">#{jobId}</span>
+              </h1>
+              <Link
+                to={`/jobs/${jobId}`}
+                className="text-sm text-gray-400 hover:text-indigo-300 transition"
+              >
+                &larr; Back to Job Details
+              </Link>
+            </div>
 
-        <div
-          style={{
-            marginBottom: "2rem",
-            border: "1px solid #ccc",
-            padding: "1rem",
-            borderRadius: "4px",
-          }}
-        >
-          <h2>Your Information</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontWeight: "bold" }}>
-              Full Name *
-            </label>
-            <input
-              type="text"
-              {...register("name", { required: "Name is required" })}
-              style={{ width: "100%", boxSizing: "border-box" }}
-            />
-            {errors.name && (
-              <p style={{ color: "red", fontSize: "0.8rem" }}>
-                {errors.name.message as string}
-              </p>
-            )}
-          </div>
-          <div>
-            <label style={{ display: "block", fontWeight: "bold" }}>
-              Email *
-            </label>
-            <input
-              type="email"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^\S+@\S+$/i,
-                  message: "Invalid email address",
-                },
-              })}
-              style={{ width: "100%", boxSizing: "border-box" }}
-            />
-            {errors.email && (
-              <p style={{ color: "red", fontSize: "0.8rem" }}>
-                {errors.email.message as string}
-              </p>
-            )}
-          </div>
-        </div>
+            {/* User Info */}
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-6 shadow-md space-y-4">
+              <h2 className="text-xl font-semibold text-indigo-300">
+                Your Information
+              </h2>
+              <div>
+                <label className="block mb-1 text-sm font-medium">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  {...register("name", { required: "Name is required" })}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                {errors.name && (
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.name.message as string}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  {...register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^\S+@\S+$/i,
+                      message: "Invalid email address",
+                    },
+                  })}
+                  className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                />
+                {errors.email && (
+                  <p className="text-red-400 text-sm mt-1">
+                    {errors.email.message as string}
+                  </p>
+                )}
+              </div>
+            </div>
 
-        {assessment.sections.map((section) => (
-          <div key={section.id} style={{ marginBottom: "2rem" }}>
-            <h2>{section.title}</h2>
-            {section.questions.map((question) => (
-              <DynamicQuestion key={question.id} question={question} />
+            {/* Sections */}
+            {assessment.sections.map((section) => (
+              <div
+                key={section.id}
+                className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-6 shadow-md space-y-4"
+              >
+                <h2 className="text-xl font-semibold text-indigo-300">
+                  {section.title}
+                </h2>
+                {section.questions.map((question) => (
+                  <DynamicQuestion key={question.id} question={question} />
+                ))}
+              </div>
             ))}
-          </div>
-        ))}
-        <button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? "Submitting..." : "Submit Application"}
-        </button>
-      </form>
-    </FormProvider>
+
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:bg-gray-600 transition text-white font-semibold rounded-lg py-3 shadow-lg"
+            >
+              {mutation.isPending ? "Submitting..." : "Submit Application"}
+            </button>
+          </form>
+        </FormProvider>
+      </div>
+    </div>
   );
 }
 
@@ -170,47 +195,41 @@ function DynamicQuestion({ question }: { question: Question }) {
     ?.message as string;
 
   return (
-    <div
-      style={{
-        marginBottom: "1rem",
-        padding: "1rem",
-        border: "1px solid #eee",
-        borderRadius: "4px",
-      }}
-    >
-      <label
-        style={{ display: "block", fontWeight: "bold", marginBottom: "0.5rem" }}
-      >
-        {question.title} {validationRules.required && "*"}
+    <div className="space-y-2">
+      <label className="block text-sm font-medium">
+        {question.title}{" "}
+        {validationRules.required && <span className="text-red-400">*</span>}
       </label>
 
       {question.type === "short-text" && (
         <input
           type="text"
           {...register(fieldName, validationRules)}
-          style={{ width: "100%" }}
+          className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
       )}
       {question.type === "long-text" && (
         <textarea
           {...register(fieldName, validationRules)}
-          style={{ width: "100%", minHeight: "80px" }}
+          className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
       )}
       {question.type === "numeric" && (
         <input
           type="number"
           {...register(fieldName, { ...validationRules, valueAsNumber: true })}
-          style={{ width: "100%" }}
+          className="w-full rounded-lg bg-white/10 border border-white/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
       )}
       {question.type === "file-upload" && (
-        <input type="file" {...register(fieldName, validationRules)} />
+        <input
+          type="file"
+          {...register(fieldName, validationRules)}
+          className="text-gray-300 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-indigo-600"
+        />
       )}
 
-      {errorMessage && (
-        <p style={{ color: "red", fontSize: "0.8rem" }}>{errorMessage}</p>
-      )}
+      {errorMessage && <p className="text-red-400 text-sm">{errorMessage}</p>}
     </div>
   );
 }
