@@ -136,7 +136,7 @@ export function JobsPage() {
       queryClient.setQueryData(["jobs", filters], optimisticallyReorderedJobs);
       return { previousJobs };
     },
-    onError: (err, newJobs, context) => {
+    onError: (_err, _newJobs, context) => {
       if (context?.previousJobs) {
         queryClient.setQueryData(["jobs", filters], context.previousJobs);
       }

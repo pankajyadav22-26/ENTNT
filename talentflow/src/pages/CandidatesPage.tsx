@@ -68,7 +68,7 @@ export function CandidatesPage() {
       );
       return { previousCandidates };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
       alert("Failed to move candidate. Rolling back.");
       if (context?.previousCandidates) {
         queryClient.setQueryData(
